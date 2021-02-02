@@ -1,6 +1,11 @@
 from functools import partial
 from inspect import isfunction
-from typing import Protocol, Type, Any, Optional, Callable, TypeVar
+from typing import Type, Any, Optional, Callable, TypeVar
+
+try:
+    from typing import Protocol
+except ImportError:
+    from typing_extensions import Protocol
 
 T = TypeVar("T")
 

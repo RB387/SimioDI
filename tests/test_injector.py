@@ -1,10 +1,14 @@
 from dataclasses import dataclass
-from typing import Protocol
 from unittest.mock import Mock
 
 import pytest
 
 from simio_di import Var, Provide, Depends, InjectionError
+
+try:
+    from typing import Protocol
+except ImportError:
+    from typing_extensions import Protocol
 
 
 def test_fail_inject(injector_fabric):
