@@ -32,7 +32,7 @@ class Worker:
     env_type: Var['env']
 
 
-async def start_worker(worker: Worker, env: Var['env']):
+async def start_worker(worker: Depends[Worker], env: Var['env']):
     # do some work
     ...
 
