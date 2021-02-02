@@ -7,4 +7,5 @@ install:
   - pip install -r requirements-dev.txt
 script:
   - pytest -vv
-  - make lint
+  - pylint simio_di
+  - black simio_di
