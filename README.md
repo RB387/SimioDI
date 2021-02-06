@@ -1,5 +1,5 @@
 # Simio
-[![Build Status](https://travis-ci.com/RB387/simio-di.svg?branch=main)](https://travis-ci.com/RB387/simio-di)  
+[![Build Status](https://travis-ci.com/RB387/SimioDI.svg?branch=main)](https://travis-ci.com/RB387/SimioDI)  
 
 Small and simple dependency injector. Made for framework [Simio](https://github.com/RB387/Simio).
 
