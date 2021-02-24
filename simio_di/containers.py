@@ -1,4 +1,4 @@
-from functools import partial
+from functools import partial, wraps
 from inspect import isfunction
 from typing import Type, Any, Optional, Callable, TypeVar
 
@@ -14,7 +14,7 @@ class DependenciesContainerProtocol(Protocol):
     def set(self, obj: Type[T], **obj_kwargs: Any):
         ...
 
-    def get(self, obj: Type[T]) -> Optional[Callable[..., T]]:
+    def get(self, obj: Type[T]) -> Optional[Callable[[], T]]:
         ...
 
 
@@ -23,9 +23,9 @@ class DependenciesContainer:
         self._deps = {}
 
     def set(self, obj: Type[T], **obj_kwargs: Any):
-        self._deps[obj] = partial(obj, **obj_kwargs)
+        self._deps[obj] = wraps(obj)(partial(obj, **obj_kwargs))
 
-    def get(self, obj: Type[T]) -> Optional[Callable[..., T]]:
+    def get(self, obj: Type[T]) -> Optional[Callable[[], T]]:
         dependency = self._deps.get(obj)
 
         if dependency is not None:
@@ -40,11 +40,11 @@ class SingletoneDependenciesContainer:
 
     def set(self, obj: Type[T], **obj_kwargs):
         if isfunction(obj):
-            self._deps[obj] = partial(obj, **obj_kwargs)
+            self._deps[obj] = wraps(obj)(partial(obj, **obj_kwargs))
         else:
             self._deps[obj] = obj(**obj_kwargs)
 
-    def get(self, obj: Type[T]) -> Optional[Callable[..., T]]:
+    def get(self, obj: Type[T]) -> Optional[Callable[[], T]]:
         dependency = self._deps.get(obj)
 
         if dependency is not None:
