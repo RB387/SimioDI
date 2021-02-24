@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TypeVar, Type, cast, get_type_hints, Dict, Any
+from typing import TypeVar, Type, cast, get_type_hints, Dict, Any, Callable
 
 from simio_di.containers import DependenciesContainerProtocol
 
@@ -61,12 +61,12 @@ class DependencyInjector:
     """
 
     def __init__(
-        self, deps_cfg: Dict[Any, Any], *, deps_container: DependenciesContainerProtocol
+        self, deps_cfg: Dict[Any, Any], deps_container: DependenciesContainerProtocol
     ):
         self._deps_cfg: Dict[Any, Any] = deps_cfg
         self._deps_container: DependenciesContainerProtocol = deps_container
 
-    def inject(self, obj: Type[T]) -> T:
+    def inject(self, obj: Type[T]) -> Callable[[], T]:
         """ Idempotent operation """
         injected = self._deps_container.get(obj)
 
@@ -78,7 +78,7 @@ class DependencyInjector:
         except TypeError as e:
             raise InjectionError(f"Failed to inject {obj}: {e}")
 
-    def _inject(self, obj: Type[T]) -> T:
+    def _inject(self, obj: Type[T]) -> Callable[[], T]:
         type_hints = get_type_hints(obj)
         kwargs = self._deps_cfg.get(obj, {})
 
