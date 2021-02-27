@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TypeVar, Type, cast, get_type_hints, Dict, Any, Callable
+from typing import TypeVar, Type, cast, get_type_hints, Dict, Any, Hashable, Callable, get_origin
 
 from simio_di.containers import DependenciesContainerProtocol
 
@@ -18,7 +18,7 @@ class Provider:
 
 @dataclass
 class Variable:
-    var: str
+    var: Hashable
 
 
 class _Depends:
@@ -68,6 +68,7 @@ class DependencyInjector:
 
     def inject(self, obj: Type[T]) -> Callable[[], T]:
         """ Idempotent operation """
+        obj = get_origin(obj) or obj
         injected = self._deps_container.get(obj)
 
         if injected is not None:
