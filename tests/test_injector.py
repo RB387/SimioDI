@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from unittest.mock import Mock
+from typing import Type
 
 import pytest
 
@@ -55,6 +56,12 @@ def test_success_inject(injector_fabric):
     class ClientProtocol(Protocol):
         some_str: str
 
+    class SomeEntityProtocol(Protocol):
+        ...
+
+    class Empty:
+        ...
+
     @dataclass
     class Something:
         some_str: str
@@ -63,6 +70,7 @@ def test_success_inject(injector_fabric):
     @dataclass
     class TestClient:
         my_var: Var["my_var"]
+        cls: Provide[Type[SomeEntityProtocol]]
         client: Provide[ClientProtocol]
 
     @dataclass
@@ -74,6 +82,7 @@ def test_success_inject(injector_fabric):
         Something: {"some_str": "123"},
         # provider bindings
         ClientProtocol: Something,
+        SomeEntityProtocol: Empty,
         # vars
         "my_var": "some text",
     }
@@ -82,6 +91,7 @@ def test_success_inject(injector_fabric):
     assert isinstance(injected_client.client, TestClient)
 
     assert injected_client.client.my_var == "some text"
+    assert injected_client.client.cls is Empty
     assert isinstance(injected_client.client.client, Something)
     assert injected_client.client.client.my_var == "some text"
     assert injected_client.client.client.some_str == "123"

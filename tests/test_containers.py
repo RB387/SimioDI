@@ -24,3 +24,11 @@ def test_dependencies_containers(container_type, expected_is_same_instance):
 
     is_same_instance = client_one is client_two
     assert is_same_instance == expected_is_same_instance
+
+    iterated_types = []
+
+    for obj_type, injected in container.iter():
+        assert isinstance(injected(), obj_type)
+        iterated_types.append(obj_type)
+
+    assert iterated_types == [TestClient]

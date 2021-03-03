@@ -8,7 +8,7 @@ with open("README.md", "r") as f:
 
 setuptools.setup(
     name="simio_di",
-    version="0.1.1",
+    version="0.1.2",
     author="Nikita Zavadin",
     author_email="zavadin142@gmail.com",
     description="Small and simple Dependency Injector. Made for Simio framework",

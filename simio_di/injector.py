@@ -1,5 +1,12 @@
 from dataclasses import dataclass
-from typing import TypeVar, Type, cast, get_type_hints, Dict, Any, Callable
+from typing import TypeVar, Type, cast, get_type_hints, Dict, Any, Hashable, Callable
+
+from more_itertools import one
+
+try:
+    from typing import get_origin, get_args
+except ImportError:
+    from simio_di.utils import get_origin, get_args
 
 from simio_di.containers import DependenciesContainerProtocol
 
@@ -18,7 +25,7 @@ class Provider:
 
 @dataclass
 class Variable:
-    var: str
+    var: Hashable
 
 
 class _Depends:
@@ -63,12 +70,13 @@ class DependencyInjector:
     def __init__(
         self, deps_cfg: Dict[Any, Any], deps_container: DependenciesContainerProtocol
     ):
+        self.deps: DependenciesContainerProtocol = deps_container
         self._deps_cfg: Dict[Any, Any] = deps_cfg
-        self._deps_container: DependenciesContainerProtocol = deps_container
 
     def inject(self, obj: Type[T]) -> Callable[[], T]:
         """ Idempotent operation """
-        injected = self._deps_container.get(obj)
+        obj = get_origin(obj) or obj
+        injected = self.deps.get(obj)
 
         if injected is not None:
             return injected
@@ -88,14 +96,25 @@ class DependencyInjector:
                 # Other wise will raise exception (You should add more deps to config)
                 kwargs[name] = self.inject(cls.dependency)()
             elif isinstance(cls, Provider):
-                provided_obj = self._deps_cfg.get(cls.provider)
+                if get_origin(cls.provider) is type:
+                    type_hint = one(get_args(cls.provider))
+                    provided_obj = self._deps_cfg.get(type_hint)
 
-                if provided_obj is None:
-                    raise InjectionError(
-                        f"Provided value for {cls.provider} is not configured"
-                    )
+                    if provided_obj is None:
+                        raise InjectionError(
+                            f"Provided value for {cls.provider} is not configured"
+                        )
 
-                kwargs[name] = self.inject(provided_obj)()
+                    kwargs[name] = provided_obj
+                else:
+                    provided_obj = self._deps_cfg.get(cls.provider)
+
+                    if provided_obj is None:
+                        raise InjectionError(
+                            f"Provided value for {cls.provider} is not configured"
+                        )
+
+                    kwargs[name] = self.inject(provided_obj)()
             elif isinstance(cls, Variable):
                 try:
                     # Exception instead of get, because None value in vars is legit
@@ -105,5 +124,5 @@ class DependencyInjector:
 
                 kwargs[name] = var_value
 
-        self._deps_container.set(obj, **kwargs)
-        return self._deps_container.get(obj)
+        self.deps.set(obj, **kwargs)
+        return self.deps.get(obj)
