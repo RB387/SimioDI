@@ -1,12 +1,13 @@
 from dataclasses import dataclass
 from unittest.mock import Mock
+from typing import Type
 
 import pytest
 
 from simio_di import Var, Provide, Depends, InjectionError
 
 try:
-    from typing import Protocol, Type
+    from typing import Protocol
 except ImportError:
     from typing_extensions import Protocol
 
