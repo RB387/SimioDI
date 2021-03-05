@@ -17,7 +17,7 @@ class DependenciesContainerProtocol(Protocol):
     def get(self, obj: Type[T]) -> Optional[Callable[[], T]]:
         ...
 
-    def iter(self) -> Iterable[Tuple[Type[T], Callable[[], T]]]:
+    def __iter__(self) -> Iterable[Tuple[Type[T], Callable[[], T]]]:
         ...
 
 
@@ -36,7 +36,7 @@ class DependenciesContainer:
 
         return None
 
-    def iter(self) -> Iterable[Tuple[Type[T], Callable[[], T]]]:
+    def __iter__(self) -> Iterable[Tuple[Type[T], Callable[[], T]]]:
         for obj_type, injected in self._deps.items():
             yield obj_type, injected
 
@@ -55,6 +55,6 @@ class SingletoneDependenciesContainer:
     def get(self, obj: Type[T]) -> Optional[Callable[[], T]]:
         return self._deps.get(obj)
 
-    def iter(self) -> Iterable[Tuple[Type[T], Callable[[], T]]]:
+    def __iter__(self) -> Iterable[Tuple[Type[T], Callable[[], T]]]:
         for obj_type, injected in self._deps.items():
             yield obj_type, injected

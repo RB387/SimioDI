@@ -4,10 +4,12 @@
 Small and simple dependency injector. Made for framework [Simio](https://github.com/RB387/Simio).
 
 * Supports `Providers`, `Variables`, `Dependencies`
+    * Note: Depends is dropped in version >= 0.2.0
 * Works with async functions
 * Friendly with mypy
 * Does not steal constructor and doesn't change injected object
 * Supports Singletone injections or new instances on every injection
+* Supports lazy injections
 * Easy to use
 
 
@@ -98,6 +100,21 @@ config = {
 }
 di = DependencyInjector(config, deps_container=SingletoneDependenciesContainer())
 di.inject(something)
+```
+
+## Lazy injection
+For lazy injection all you need is `lazy_inject` and `do_lazy_injections`
+```python
+injector = DependencyInjector(config, SingletoneDependenciesContainer())
+
+@injector.lazy_inject  # after this decorator this is still not injected function
+def some_func(client: Provide[ClientProtocol]):
+    client.do_something()
+
+some_func()  # raise TypeError
+injector.do_lazy_injections()
+
+some_func()  # ok
 ```
 
 

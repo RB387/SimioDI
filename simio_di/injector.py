@@ -1,7 +1,10 @@
 from dataclasses import dataclass
-from typing import TypeVar, Type, cast, get_type_hints, Dict, Any, Hashable, Callable
+from functools import wraps
+from typing import TypeVar, Type, cast, get_type_hints, Dict, Any, Hashable, Callable, List
 
 from more_itertools import one
+
+from simio_di.utils import deep_merge_dicts
 
 try:
     from typing import get_origin, get_args
@@ -14,11 +17,6 @@ T = TypeVar("T")
 
 
 @dataclass
-class Dependency:
-    dependency: Type[T]
-
-
-@dataclass
 class Provider:
     provider: Type[T]
 
@@ -28,19 +26,10 @@ class Variable:
     var: Hashable
 
 
-class _Depends:
-    # Need to create instance, because
-    # with __class_getitem__ type hinting
-    # in PyCharm doesn't work for some reason
-    def __getitem__(self, item: Type[T]) -> Type[T]:
-        dependency = Dependency(item)
-        # So actually it's not Type[T], we still return Dependency instance
-        # But for type hints it is, because we will inject it later
-        return cast(Type[T], dependency)
-
-
 class _Provide:
     def __getitem__(self, item: Type[T]) -> Type[T]:
+        # So actually it's not Type[T], we still return Dependency instance
+        # But for type hints it is, because we will inject it later
         provider = Provider(item)
         return cast(Type[T], provider)
 
@@ -50,7 +39,6 @@ class _Var:
         return Variable(item)
 
 
-Depends = _Depends()
 Provide = _Provide()
 Var = _Var()
 
@@ -71,7 +59,8 @@ class DependencyInjector:
         self, deps_cfg: Dict[Any, Any], deps_container: DependenciesContainerProtocol
     ):
         self.deps: DependenciesContainerProtocol = deps_container
-        self._deps_cfg: Dict[Any, Any] = deps_cfg
+        self.deps_cfg: Dict[Any, Any] = deps_cfg
+        self.postponed: List[Callable[[], Any]] = []
 
     def inject(self, obj: Type[T]) -> Callable[[], T]:
         """ Idempotent operation """
@@ -86,19 +75,36 @@ class DependencyInjector:
         except TypeError as e:
             raise InjectionError(f"Failed to inject {obj}: {e}")
 
+    def lazy_inject(self, obj: Type[T]) -> Type[T]:
+        injected = obj
+
+        @wraps(obj)
+        def wrapper(*args, **kwargs):
+            return injected(*args, **kwargs)
+
+        def _inject():
+            nonlocal injected
+            injected = self.inject(obj)
+
+        self.postponed.append(_inject)
+        return wrapper
+
+    def do_lazy_injections(self):
+        while self.postponed:
+            self.postponed.pop()()
+
+    def add_config(self, deps_cfg: Dict[Any, Any]):
+        deep_merge_dicts(self.deps_cfg, deps_cfg)
+
     def _inject(self, obj: Type[T]) -> Callable[[], T]:
         type_hints = get_type_hints(obj)
-        kwargs = self._deps_cfg.get(obj, {})
+        kwargs = self.deps_cfg.get(obj, {})
 
         for name, cls in type_hints.items():
-            if isinstance(cls, Dependency):
-                # If all deps are injected then it will be okay
-                # Other wise will raise exception (You should add more deps to config)
-                kwargs[name] = self.inject(cls.dependency)()
-            elif isinstance(cls, Provider):
+            if isinstance(cls, Provider):
                 if get_origin(cls.provider) is type:
                     type_hint = one(get_args(cls.provider))
-                    provided_obj = self._deps_cfg.get(type_hint)
+                    provided_obj = self.deps_cfg.get(type_hint)
 
                     if provided_obj is None:
                         raise InjectionError(
@@ -107,18 +113,21 @@ class DependencyInjector:
 
                     kwargs[name] = provided_obj
                 else:
-                    provided_obj = self._deps_cfg.get(cls.provider)
+                    provider = get_origin(cls.provider) or cls.provider
+                    provided_obj = self.deps_cfg.get(provider)
 
                     if provided_obj is None:
                         raise InjectionError(
-                            f"Provided value for {cls.provider} is not configured"
+                            f"Provided value for {provider} is not configured"
                         )
 
+                    # If all deps are injected then it will be okay
+                    # Other wise will raise exception (You should add more deps to config)
                     kwargs[name] = self.inject(provided_obj)()
             elif isinstance(cls, Variable):
                 try:
                     # Exception instead of get, because None value in vars is legit
-                    var_value = self._deps_cfg[cls.var]
+                    var_value = self.deps_cfg[cls.var]
                 except KeyError:
                     raise InjectionError(f"Value for variable {cls.var} is not defined")
 

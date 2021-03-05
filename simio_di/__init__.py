@@ -1,2 +1,2 @@
-from .injector import DependencyInjector, Var, Depends, Provide, InjectionError
+from .injector import DependencyInjector, Var, Provide, InjectionError
 from .containers import *

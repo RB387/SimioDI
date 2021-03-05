@@ -27,7 +27,7 @@ def test_dependencies_containers(container_type, expected_is_same_instance):
 
     iterated_types = []
 
-    for obj_type, injected in container.iter():
+    for obj_type, injected in container:
         assert isinstance(injected(), obj_type)
         iterated_types.append(obj_type)
 
