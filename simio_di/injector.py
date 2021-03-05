@@ -1,6 +1,16 @@
 from dataclasses import dataclass
 from functools import wraps
-from typing import TypeVar, Type, cast, get_type_hints, Dict, Any, Hashable, Callable, List
+from typing import (
+    TypeVar,
+    Type,
+    cast,
+    get_type_hints,
+    Dict,
+    Any,
+    Hashable,
+    Callable,
+    List,
+)
 
 from more_itertools import one
 
