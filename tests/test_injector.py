@@ -129,29 +129,18 @@ def test_lazy_inject(injector_fabric):
 
 def test_add_config(injector_fabric):
     config = {
-        'key_one': {
-            'embedded': '3',
-            'one_more': '5',
-        },
-        'key_two': '4',
-        'key_three': '5',
+        "key_one": {"embedded": "3", "one_more": "5",},
+        "key_two": "4",
+        "key_three": "5",
     }
 
     injector = injector_fabric(config)
-    injector.add_config({
-        'key_two': '10',
-        'key_one': {
-            'embedded': '10',
-            'new_key': '123',
-        },
-    })
+    injector.add_config(
+        {"key_two": "10", "key_one": {"embedded": "10", "new_key": "123",},}
+    )
 
     assert injector.deps_cfg == {
-        'key_one': {
-            'embedded': '10',
-            'new_key': '123',
-            'one_more': '5',
-        },
-        'key_two': '10',
-        'key_three': '5',
+        "key_one": {"embedded": "10", "new_key": "123", "one_more": "5",},
+        "key_two": "10",
+        "key_three": "5",
     }
